@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+*.v2
+*.vsconfig
+*.vsidx
+*.vs
+*.sln
+*.uproject
+*Binaries
+*Intermediate
+*Saved
