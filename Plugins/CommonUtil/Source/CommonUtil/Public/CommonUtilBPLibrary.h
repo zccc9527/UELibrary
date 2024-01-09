@@ -65,6 +65,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static TArray<FString> FindFiles(const FString& InPath, const FString& Extension, bool bRecursive = false, bool bDirectories = false);
 
+	/*
+	* 将控件添加到视口上
+	* @param InWidget			待添加的控件
+	* @param InSize				控件大小
+	*/
+	//UFUNCTION(BlueprintCallable, Category = "CommonUtil")
+	static void AddWidgetToViewport(TSharedPtr<SWidget> InWidget, FVector2D InPosition, FVector2D InSize, FVector2D InAlignment, int32 InZOrder = -1);
+
+	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
+	static void AddWidgetToViewport2(FVector2D InPosition, FVector2D InSize, FVector2D InAlignment, int32 InZOrder = -1);
+
 	#if WITH_EDITOR
 	/*
 	* 获得当前选中的UObject

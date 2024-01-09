@@ -20,6 +20,8 @@
 #include "Exporters/Exporter.h"
 #include "Windows/WindowsPlatformApplicationMisc.h"
 #include "GameFramework/DefaultPhysicsVolume.h"
+#include "Widgets/Layout/SConstraintCanvas.h"
+#include "Widgets/Images/SImage.h"
 
 class FSESelectedActorExportObjectInnerContext : public FExportObjectInnerContext
 {
@@ -578,6 +580,27 @@ TArray<FString> UCommonUtilBPLibrary::FindFiles(const FString& InPath, const FSt
 		IFileManager::Get().FindFiles(OutFiles, *InPath, *(TEXT("*.") + Extension));
 	}
 	return OutFiles;
+}
+
+void UCommonUtilBPLibrary::AddWidgetToViewport(TSharedPtr<SWidget> InWidget, FVector2D InPosition, FVector2D InSize, FVector2D InAlignment, int32 InZOrder/* = -1*/)
+{
+	UWorld* CurrentWorld = GWorld->GetWorld();
+	check(CurrentWorld && CurrentWorld->IsGameWorld());
+	UGameViewportClient* ViewportClient = CurrentWorld->GetGameViewport();
+	check(ViewportClient);
+
+	TSharedPtr<SConstraintCanvas> RenderCanvas = SNew(SConstraintCanvas);
+	RenderCanvas->AddSlot().Offset(FMargin(InPosition.X, InPosition.Y, InSize.X, InSize.Y)).Alignment(InAlignment)
+		[
+			InWidget.ToSharedRef()
+		];
+	ViewportClient->AddViewportWidgetContent(RenderCanvas.ToSharedRef(), InZOrder);
+}
+
+void UCommonUtilBPLibrary::AddWidgetToViewport2(FVector2D InPosition, FVector2D InSize, FVector2D InAlignment, int32 InZOrder /*= -1*/)
+{
+	TSharedPtr<SImage> Image = SNew(SImage);
+	AddWidgetToViewport(Image, InPosition, InSize, InAlignment, InZOrder);
 }
 
 #if WITH_EDITOR
