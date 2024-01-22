@@ -5,17 +5,23 @@
 #include "UObject/NoExportTypes.h"
 #include "UObject/SavePackage.h"
 
-void UTryDelayBPLibrary::DelayFunctionName(UObject* CallbackTarget, FName ExecutionFunction, float Duration, bool bRetriggerable/* = true*/)
+void UTryDelayBPLibrary::DelayFunctionName(UObject* CallbackTarget, int32 uuid, FName ExecutionFunction, float Duration, bool bRetriggerable/* = true*/)
 {
 	if (UWorld* World = CallbackTarget->GetWorld())
 	{
 		FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
 
+		static int32 NewId = 0;
+		if (uuid == -1)
+		{
+			uuid = ++NewId;
+		}
+
 		FLatentActionInfo LatentActionInfo;
 		LatentActionInfo.CallbackTarget = CallbackTarget;
 		LatentActionInfo.ExecutionFunction = ExecutionFunction;
 		LatentActionInfo.Linkage = 0;
-		LatentActionInfo.UUID = FMath::Rand();
+		LatentActionInfo.UUID = uuid;
 
 		FDelayAction* DelayAction = LatentActionManager.FindExistingAction<FDelayAction>(LatentActionInfo.CallbackTarget, LatentActionInfo.UUID);
 		if (DelayAction == nullptr)
@@ -29,94 +35,114 @@ void UTryDelayBPLibrary::DelayFunctionName(UObject* CallbackTarget, FName Execut
 				DelayAction->TimeRemaining = Duration;
 			}
 		}
+
+		NewId = uuid;
 	}
 }
 
-void UTryDelayBPLibrary::DelayLambda(UObject* Obj, int32 uuid, float Duration, TFunction<void()> InTriggerFunc, bool bRetriggerable/* = true*/)
+void UTryDelayBPLibrary::DelayLambda(int32 uuid, float Duration, TFunction<void()> InTriggerFunc, bool bRetriggerable/* = true*/)
 {
-	if (UWorld* World = GEngine->GetWorldFromContextObject(Obj, EGetWorldErrorMode::LogAndReturnNull))
+	auto FindWorld = [](UWorld* InWorld)->bool
 	{
-		FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+		#if WITH_EDITOR || GIsEditor
+		if (InWorld->WorldType == EWorldType::PIE)	return true;
+		#else
+		if (InWorld->WorldType == EWorldType::Game || InWorld->WorldType == EWorldType::GamePreview) return true;
+		#endif
+		return false;
+	};
 
-		FLambdaDelayAction* LambdaDelayAction = LatentActionManager.FindExistingAction<FLambdaDelayAction>(Obj, uuid);
-		if (LambdaDelayAction == nullptr)
+	UWorld* World = UCommonUtilBPLibrary::ForEachWorld(FindWorld);
+	if (World == nullptr)
+		return;
+
+	static int32 NewId = 0;
+	if (uuid == -1)
+	{
+		uuid = ++NewId;
+	}
+
+	FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+	FTFunctionDelayAction* LambdaDelayAction = LatentActionManager.FindExistingAction<FTFunctionDelayAction>(World, uuid);
+	if (LambdaDelayAction == nullptr)
+	{
+		LatentActionManager.AddNewAction(World, uuid, new FTFunctionDelayAction(Duration, InTriggerFunc));
+	}
+	else
+	{
+		if (bRetriggerable)
 		{
-			LatentActionManager.AddNewAction(Obj, uuid, new FLambdaDelayAction(Duration, InTriggerFunc));
-		}
-		else
-		{
-			if (bRetriggerable)
-			{
-				LambdaDelayAction->SetDuration(Duration);
-			}
+			LambdaDelayAction->SetDuration(Duration);
 		}
 	}
+	NewId = uuid;
 }
 
-//template<class C, typename Ret, typename... Args>
-//void UTryDelayBPLibrary::DelayMemberFunction(C* Obj, int32 uuid, float Duration, Ret(C::* pf)(Args...), Args... args)
+//template<class C, typename... Args>
+//void UTryDelayBPLibrary::DelayMemberFunction(UObject* Obj, int32 uuid, float Duration, bool bRetriggerable, void(C::* pf)(Args...), Args... args)
 //{
-//	if (UWorld* World = GEngine->GetWorldFromContextObject(Obj, EGetWorldErrorMode::LogAndReturnNull))
-//	{
-//		FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+//	UWorld* World = Obj->GetWorld();
+//	if (World == nullptr)
+//		return;
 //
-//		FObjectDelayAction<C, Ret, Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FObjectDelayAction<C, Ret, Args...>>(Obj, uuid);
-//		if (ObjectDelayAction == nullptr)
-//		{
-//			LatentActionManager.AddNewAction(Obj, uuid, new FObjectDelayAction<C, Ret, Args...>(Duration, Obj, pf, args...));
-//		}
-//		else
+//	static int32 NewId = 0;
+//	if (uuid == -1)
+//	{
+//		uuid = ++NewId;
+//	}
+//
+//	FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+//
+//	FObjectDelayAction<C, Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FObjectDelayAction<C, Args...>>(Obj, uuid);
+//	if (ObjectDelayAction == nullptr)
+//	{
+//		LatentActionManager.AddNewAction(Obj, uuid, new FObjectDelayAction<C, Args...>(Duration, Cast<C>(Obj), pf, args...));
+//	}
+//	else
+//	{
+//		if (bRetriggerable)
 //		{
 //			ObjectDelayAction->SetDuration(Duration);
 //		}
 //	}
+//	NewId = uuid;
 //}
 
-template<class C, typename... Args>
-void UTryDelayBPLibrary::DelayMemberFunction(C* Obj, int32 uuid, float Duration, bool bRetriggerable, void(C::* pf)(Args...), Args... args)
-{
-	if (UWorld* World = GEngine->GetWorldFromContextObject(Obj, EGetWorldErrorMode::LogAndReturnNull))
-	{
-		FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
-
-		FObjectDelayAction<C, Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FObjectDelayAction<C, Args...>>(Obj, uuid);
-		if (ObjectDelayAction == nullptr)
-		{
-			LatentActionManager.AddNewAction(Obj, uuid, new FObjectDelayAction<C, Args...>(Duration, Obj, pf, args...));
-		}
-		else
-		{
-			ObjectDelayAction->SetDuration(Duration);
-		}
-	}
-}
-
-template<class C, typename... Args>
-void UTryDelayBPLibrary::DelayRawFunction(UWorld* World, C* Obj, int32 uuid, float Duration, bool bRetriggerable, void(C::* pf)(Args...), Args... args)
-{
-	if (World)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%d"), World->IsGameWorld());
-		FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
-
-		static int32 NewId = 0;
-		if (uuid == -1)
-		{
-			uuid = ++NewId;
-		}
-
-		FRawDelayAction<C, Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FRawDelayAction<C, Args...>>(World, uuid);
-		if (ObjectDelayAction == nullptr)
-		{
-			LatentActionManager.AddNewAction(World, uuid, new FRawDelayAction<C, Args...>(Duration, Obj, pf, args...));
-		}
-		else
-		{
-			if (bRetriggerable)
-			{
-				ObjectDelayAction->SetDuration(Duration);
-			}
-		}
-		NewId = uuid;
-	}
-}
+//template<class C, typename... Args>
+//void UTryDelayBPLibrary::DelayRawFunction(C* Obj, int32 uuid, float Duration, bool bRetriggerable, void(C::* pf)(Args...), Args... args)
+//{
+//	auto FindWorld = [](UWorld* InWorld)->bool
+//	{
+//		#if WITH_EDITOR || GIsEditor
+//		if (InWorld->WorldType == EWorldType::PIE)	return true;
+//		#else
+//		if (InWorld->WorldType == EWorldType::Game || InWorld->WorldType == EWorldType::GamePreview) return true;
+//		#endif
+//		return false;
+//	};
+//
+//	UWorld* World = UCommonUtilBPLibrary::ForEachWorld(FindWorld);
+//	if (World == nullptr) return;
+//
+//	FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+//
+//	static int32 NewId = 0;
+//	if (uuid == -1)
+//	{
+//		uuid = ++NewId;
+//	}
+//
+//	FRawDelayAction<C, Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FRawDelayAction<C, Args...>>(World, uuid);
+//	if (ObjectDelayAction == nullptr)
+//	{
+//		LatentActionManager.AddNewAction(World, uuid, new FRawDelayAction<C, Args...>(Duration, Obj, pf, args...));
+//	}
+//	else
+//	{
+//		if (bRetriggerable)
+//		{
+//			ObjectDelayAction->SetDuration(Duration);
+//		}
+//	}
+//	NewId = uuid;
+//}

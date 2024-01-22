@@ -3,7 +3,7 @@
 
 FRawTest::FRawTest()
 {
-	UTryDelayBPLibrary::DelayRawFunction(GWorld->GetWorld(), this, -1, 5.f, true, &FRawTest::TestPrint, GWorld->GetWorld(), 55.f);
+	//UTryDelayBPLibrary::DelayRawFunction(this, -1, 5.f, true, &FRawTest::TestPrint, GWorld->GetWorld(), 55.f);
 }
 
 void FRawTest::TestPrint(UWorld* World, float InValue)

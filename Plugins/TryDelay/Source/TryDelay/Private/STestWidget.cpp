@@ -15,7 +15,7 @@ void STestWidget::Construct(const FArguments& InArgs)
 	if (GWorld->GetWorld() && GWorld->GetWorld()->IsGameWorld())
 	{
 		World = GWorld->GetWorld();
-		UTryDelayBPLibrary::DelayRawFunction(World, this, -1, 5.f, true, &STestWidget::PrintValue, World, 110.f);
+		UTryDelayBPLibrary::DelayRawFunction(this, -1, 5.f, true, &STestWidget::PrintValue, World, 110.f);
 	}
 }
 
@@ -26,9 +26,9 @@ FReply STestWidget::ClickButton()
 	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("%f"), World->GetRealTimeSeconds()));
 	auto TestLam = [this]()
 	{
-		UTryDelayBPLibrary::DelayRawFunction(World, this, -1, 5.f, true, &STestWidget::PrintValue, World, 220.f);
+		//UTryDelayBPLibrary::DelayRawFunction(this, -1, 5.f, true, &STestWidget::PrintValue, World, 220.f);
 	};
-	UTryDelayBPLibrary::DelayLambda(World, -1, 1.f, TestLam);
+	UTryDelayBPLibrary::DelayLambda(-1, 1.f, TestLam);
 
 	return FReply::Unhandled();
 }
