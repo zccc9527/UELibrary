@@ -31,6 +31,14 @@ class COMMONUTIL_API UCommonUtilBPLibrary : public UBlueprintFunctionLibrary
 
 public:
 	/*
+	* 根据条件查找世界
+	* @param InTriggerFunc		条件表达式
+	* @param args				是否递归每个子文件夹
+	* @return					返回查找到的世界
+	*/
+	static UWorld* ForEachWorld(TFunction<bool(UWorld*)> InTriggerFunc);
+
+	/*
 	* 根据类型查找资产
 	* @param InClass			类型数组
 	* @param bRecursivePaths	是否递归每个子文件夹
@@ -53,6 +61,11 @@ public:
 	* 返回当前鼠标位置的控件,可能是nullptr
 	*/
 	static TSharedPtr<SWidget> GetSlateWidgetUnderCursor();
+
+	/*
+	* 返回某个位置的控件,可能是nullptr
+	*/
+	static TSharedPtr<SWidget> GetSlateWidgetOnPosition(FVector2D InPosition);
 
 	/*
 	* 查找路径下所有相同后缀文件
@@ -90,29 +103,33 @@ public:
 	static TArray<AActor*> GetCurrentSelectedActors();
 	#endif
 
-	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
-	static bool SaveToJson(UObject* SaveObject, const FString& Path);
-	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
-	static bool LoadFromJson(UObject* OutObject, const FString& Path);
+	/*
+	* 复制物体全部信息
+	* @param Actors				待复制的物体数组
+	* @param DestinationData	复制出来的文本信息,为空指针时将复制的文本给到粘贴板
+	*/
+	static void CopyActors(TArray<AActor*> Actors, FString* DestinationData = nullptr);
+	
+	/*
+	* 根据文本信息粘贴物体
+	* @param Actors				粘贴后的物体数组
+	* @param DestinationData	粘贴的文本信息,为空指针时从粘贴板取文本
+	*/
+	static void PasteActors(TArray<AActor*>& OutPastedActors, FString* SourceData = nullptr);
 
-	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
-	static bool SaveObject(UObject* SaveObject, const FString& Path);
-	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
-	static bool LoadObject(UObject* OutObject, const FString& Path);
-
-	//UFUNCTION(BlueprintCallable, Category = "CommonUtil")
-	static void CopyActors(TArray<AActor*>& Actors, FString* DestinationData = nullptr);
-	//UFUNCTION(BlueprintCallable, Category = "CommonUtil")
-	static void PasteActors(TArray<AActor*>& OutPastedActors, UWorld* InWorld, FString* SourceData = nullptr);
-
+	/**-------功能测试----------*/
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static void CopyActorsTest(TArray<AActor*> Actors);
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
-	static void PasteActorsTest(TArray<AActor*> OutPastedActors, UObject* InWorld);
+	static void PasteActorsTest(TArray<AActor*> OutPastedActors);
+	/**-------功能测试----------*/
 };
 
+/**
+* 需要AddToRoot的代理类，构造自动AddToRoot,析构自动RemoveFromRoot
+*/
 template<typename T = UObject>
-class FRootedUObject
+class COMMONUTIL_API FRootedUObject
 {
 public:
 	FRootedUObject(T* InObj) : Obj(InObj)
@@ -128,6 +145,10 @@ public:
 	}
 
 	T* operator->()
+	{
+		return Obj;
+	}
+	T* Get() const
 	{
 		return Obj;
 	}
@@ -303,6 +324,9 @@ namespace Tmp
 	};
 }
 
+/**
+* 判断某个类中是否存在type类型
+*/
 #ifndef DEFINE_HAS_TYPE_MEM
 #define DEFINE_HAS_TYPE_MEM(type)	\
 template<typename T, typename U = Tmp::void_t<>>	\
@@ -311,6 +335,10 @@ template<typename T>	\
 struct _HAVE_TYPE_MEMBER_##type<T, Tmp::void_t<typename T::type>> : Tmp::true_type {};
 #endif
 
+/**
+* 判断某个类中是否存在value变量
+* 
+*/
 #ifndef DEFINE_HAS_VALUE_MEM
 #define DEFINE_HAS_VALUE_MEM(value)	\
 template<typename T, typename U = Tmp::void_t<>>	\
@@ -319,6 +347,9 @@ template<typename T>	\
 struct _HAVE_VALUE_MEMBER_##value<T, Tmp::void_t<decltype(T::value)>> : Tmp::true_type {};
 #endif
 
+/**
+* 判断某个类中是否存在func函数
+*/
 #ifndef DEFINE_HAS_FUNC_MEM
 #define DEFINE_HAS_FUNC_MEM(func)	\
 template<typename T, typename U = Tmp::void_t<>>	\
@@ -339,3 +370,68 @@ struct _HAVE_FUNC_MEMBER_##func<T, Tmp::void_t<decltype(Tmp::declval<T>().func()
 #ifndef CLASS_HAS_FUNC_MEM
 #define CLASS_HAS_FUNC_MEM(className, funcName) _HAVE_FUNC_MEMBER_##funcName<className>::value
 #endif
+
+#if 0	/**已舍弃*/
+#ifndef GeneratePrivateData
+#define GeneratePrivateData(type, member, valuetype)	\
+template<auto m>	\
+struct Tunnel##type##member;	\
+template<typename T, typename U, typename T U::* member> \
+struct Tunnel##type##member<member>	\
+{\
+	friend T* GetPrivateData##type##member(U& u)	\
+	{\
+		return &(u.*member);	\
+	}\
+};\
+template struct Tunnel##type##member<&type::member>;\
+valuetype* GetPrivateData##type##member(type& u);
+#endif // !GetPrivateData
+#endif
+
+template<typename Accessor, typename Accessor::Member Member> struct COMMONUTIL_API AccessPrivate
+{
+	friend typename Accessor::Member GetPrivate(Accessor InAccessor)
+	{
+		return Member;
+	}
+};
+
+/**----------------获得保护/私有变量----------------*/
+#define IMPLEMENT_GET_PRIVATE_VAR(InClass, VarName, VarType) \
+struct InClass##VarName##Accessor \
+{ \
+	using Member = VarType InClass::*; \
+	\
+	friend Member GetPrivate(InClass##VarName##Accessor); \
+}; \
+\
+template struct AccessPrivate<InClass##VarName##Accessor, &InClass::VarName>;
+
+#define GET_PRIVATE(InClass, InObj, MemberName) &((*InObj).*GetPrivate(InClass##MemberName##Accessor()))
+/**----------------------End----------------------*/
+
+/**----------------调用保护/私有函数----------------*/
+#define IMPLEMENT_GET_PRIVATE_FUNC(InClass, FuncName, FuncRet, ...)	\
+struct InClass##FuncName##Accessor	\
+{\
+	using Member = FuncRet(InClass::*)(__VA_ARGS__);	\
+	friend Member GetPrivate(InClass##FuncName##Accessor);	\
+};	\
+template struct AccessPrivate<InClass##FuncName##Accessor, &InClass::FuncName>;
+
+#define  CALL_PRIVATE_FUNC(InClass, InObj, FuncName, ...) ((InObj->*(GetPrivate(InClass##FuncName##Accessor())))(__VA_ARGS__))
+/**----------------------End----------------------*/
+
+
+/**----------------调用重载的保护/私有函数----------------*/
+#define IMPLEMENT_GET_PRIVATE_FUNC_OVERLOAD(InClass, FuncName, FuncRet, ExpandName, ...)	\
+struct InClass##FuncName##Accessor##ExpandName	\
+{\
+	using Member = FuncRet(InClass::*)(__VA_ARGS__);	\
+	friend Member GetPrivate(InClass##FuncName##Accessor##ExpandName);	\
+};	\
+template struct AccessPrivate<InClass##FuncName##Accessor##ExpandName, &InClass::FuncName>;
+
+#define  CALL_PRIVATE_FUNC_OVERLOAD(InClass, InObj, FuncName, ExpandName, ...) ((InObj->*(GetPrivate(InClass##FuncName##Accessor##ExpandName())))(__VA_ARGS__))
+/**----------------------End----------------------*/

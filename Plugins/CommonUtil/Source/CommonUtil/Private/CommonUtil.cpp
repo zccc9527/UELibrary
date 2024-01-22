@@ -12,13 +12,8 @@ DEFINE_HAS_VALUE_MEM(a);
 
 void FCommonUtilModule::StartupModule()
 {
-	TFunction<void(float)> GetWidget = [](float Value)
+	/*TFunction<void(float)> GetWidget = [](float Value)
 	{
-		/*#if WITH_EDITOR
-		TArray<UObject*> Objs = UCommonUtilBPLibrary::GetCurrentSelectedObjects();
-		TArray<AActor*> Actors = UCommonUtilBPLibrary::GetCurrentSelectedActors();
-		UE_LOG(LogTemp, Warning, TEXT("%d, %d"), Objs.Num(), Actors.Num());
-		#endif*/
 		class A
 		{
 		public:
@@ -27,12 +22,12 @@ void FCommonUtilModule::StartupModule()
 			void func(){}
 		};
 		
-		//UE_LOG(LogTemp, Warning, TEXT("%d, %d, %d"), CLASS_HAS_FUNC_MEM(A, func), CLASS_HAS_VALUE_MEM(A, a), CLASS_HAS_TYPE_MEM(A, Type));
+		UE_LOG(LogTemp, Warning, TEXT("%d, %d, %d"), CLASS_HAS_FUNC_MEM(A, func), CLASS_HAS_VALUE_MEM(A, a), CLASS_HAS_TYPE_MEM(A, Type));
 	};
 	if (FSlateApplication::IsInitialized())
 	{
-		//FSlateApplication::Get().OnPostTick().AddLambda(GetWidget);
-	}
+		FSlateApplication::Get().OnPostTick().AddLambda(GetWidget);
+	}*/
 }
 
 void FCommonUtilModule::ShutdownModule()

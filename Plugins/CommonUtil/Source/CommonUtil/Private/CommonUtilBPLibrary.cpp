@@ -238,7 +238,7 @@ UObject* FactoryCreateText(UClass* Class, UObject* InParent, FName Name, EObject
 		else if (GetBEGIN2(&Str, TEXT("ACTOR")))
 		{
 			UClass* TempClass;
-			if (ParseObject<UClass>(Str, TEXT("CLASS="), TempClass, ANY_PACKAGE))
+			if (ParseObject<UClass>(Str, TEXT("CLASS="), TempClass, nullptr, EParseObjectLoadingPolicy::FindOrLoad))
 			{
 				// Get actor name.
 				FName ActorUniqueName(NAME_None);
@@ -276,13 +276,13 @@ UObject* FactoryCreateText(UClass* Class, UObject* InParent, FName Name, EObject
 					if (FPackageName::ParseExportTextPath(ArchetypeName, &ObjectClass, &ObjectPath))
 					{
 						// find the class
-						UClass* ArchetypeClass = (UClass*)StaticFindObject(UClass::StaticClass(), ANY_PACKAGE, *ObjectClass);
+						UClass* ArchetypeClass = UClass::TryFindTypeSlow<UClass>(ObjectClass, EFindFirstObjectOptions::EnsureIfAmbiguous);
 						if (ArchetypeClass)
 						{
 							if (ArchetypeClass->IsChildOf(AActor::StaticClass()))
 							{
 								// if we had the class, find the archetype
-								Archetype = Cast<AActor>(StaticFindObject(ArchetypeClass, ANY_PACKAGE, *ObjectPath));
+								Archetype = Cast<AActor>(StaticFindObject(ArchetypeClass, nullptr, *ObjectPath));
 							}
 							else
 							{
@@ -516,6 +516,19 @@ UObject* FactoryCreateText(UClass* Class, UObject* InParent, FName Name, EObject
 }
 
 
+
+UWorld* UCommonUtilBPLibrary::ForEachWorld(TFunction<bool(UWorld*)> InTriggerFunc)
+{
+	for (const FWorldContext WorldContext : GEngine->GetWorldContexts())
+	{
+		if (InTriggerFunc(WorldContext.World()))
+		{
+			return WorldContext.World();
+		}
+	}
+	return nullptr;
+}
+
 TArray<UObject*> UCommonUtilBPLibrary::FindObjectsByClass(TArray<UClass*> InClass, bool bRecursivePaths /*= false*/)
 {
 	TArray<FString> PackagePaths;
@@ -548,6 +561,11 @@ TArray<UObject*> UCommonUtilBPLibrary::FindObjectsByClassAndPaths(TArray<UClass*
 
 TSharedPtr<SWidget> UCommonUtilBPLibrary::GetSlateWidgetUnderCursor()
 {
+	return GetSlateWidgetOnPosition(FSlateApplication::Get().GetCursorPos());
+}
+
+TSharedPtr<SWidget> UCommonUtilBPLibrary::GetSlateWidgetOnPosition(FVector2D InPosition)
+{
 	if (FSlateApplication::IsInitialized())
 	{
 		TSharedPtr<SWindow> Window = FSlateApplication::Get().GetActiveTopLevelWindow();
@@ -557,12 +575,12 @@ TSharedPtr<SWidget> UCommonUtilBPLibrary::GetSlateWidgetUnderCursor()
 		}
 		TArray<TSharedRef<SWindow>> Windows;
 		Windows.Add(Window.ToSharedRef());
-		FWidgetPath WidgetPath = FSlateApplication::Get().LocateWindowUnderMouse(FSlateApplication::Get().GetCursorPos(), Windows);
+		FWidgetPath WidgetPath = FSlateApplication::Get().LocateWindowUnderMouse(InPosition, Windows);
 		if (WidgetPath.Widgets.Num() > 0)
 		{
-			TSharedPtr<SWidget> ClickWidget = WidgetPath.Widgets.Last().Widget;
-			
-			return ClickWidget;
+			TSharedPtr<SWidget> PositionWidget = WidgetPath.Widgets.Last().Widget;
+
+			return PositionWidget;
 		}
 	}
 	return nullptr;
@@ -619,68 +637,7 @@ TArray<AActor*> UCommonUtilBPLibrary::GetCurrentSelectedActors()
 }
 #endif
 
-bool UCommonUtilBPLibrary::SaveToJson(UObject* SaveObject, const FString& Path)
-{
-	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject());
-	FJsonObjectConverter::UStructToJsonObject(SaveObject->GetClass(), SaveObject, JsonObj.ToSharedRef(), 0, 0);
-
-	FString JsonStr = TEXT("");
-	const TSharedRef<TJsonWriter<TCHAR>> JsonWriter = TJsonWriterFactory<TCHAR>::Create(&JsonStr);
-	FJsonSerializer::Serialize(JsonObj.ToSharedRef(), JsonWriter);
-
-	return FFileHelper::SaveStringToFile(JsonStr, *Path);
-}
-
-bool UCommonUtilBPLibrary::LoadFromJson(UObject* OutObject, const FString& Path)
-{
-	/*if (OutObject == nullptr)
-	{
-		OutObject = NewObject<UObject>();
-	}*/
-	FString JsonStr = TEXT("");
-	FFileHelper::LoadFileToString(JsonStr, *Path);
-
-	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject());
-	const TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonStr);
-	const bool Res = FJsonSerializer::Deserialize(JsonReader, JsonObj);
-
-	FJsonObjectConverter::JsonObjectToUStruct(JsonObj.ToSharedRef(), OutObject->GetClass(), OutObject, 0, 0);
-
-	return Res;
-}
-
-bool UCommonUtilBPLibrary::SaveObject(UObject* SaveObject, const FString& Path)
-{
-	TArray<uint8> Datas;
-	FMemoryWriter MemoryWriter(Datas, true);
-
-	FObjectAndNameAsStringProxyArchive Ar(MemoryWriter, false);
-	//Ar.ArIsSaveGame = true;
-	Ar.ArNoDelta = true;
-
-	SaveObject->Serialize(Ar);
-
-	return FFileHelper::SaveArrayToFile(Datas, *Path);
-}
-
-bool UCommonUtilBPLibrary::LoadObject(UObject* OutObject, const FString& Path)
-{
-	TArray<uint8> Datas;
-	FFileHelper::LoadFileToArray(Datas, *Path);
-
-	if (Datas.IsEmpty()) return false;
-
-	FMemoryReader MemoryReader(Datas, true);
-	FObjectAndNameAsStringProxyArchive Ar(MemoryReader, false);
-	//Ar.ArIsSaveGame = true;
-	Ar.ArNoDelta = true;
-
-	OutObject->Serialize(Ar);
-
-	return true;
-}
-
-void UCommonUtilBPLibrary::CopyActors(TArray<AActor*>& Actors, FString* DestinationData /*= nullptr*/)
+void UCommonUtilBPLibrary::CopyActors(TArray<AActor*> Actors, FString* DestinationData /*= nullptr*/)
 {
 	if (Actors.IsEmpty()) return;
 
@@ -702,9 +659,25 @@ void UCommonUtilBPLibrary::CopyActors(TArray<AActor*>& Actors, FString* Destinat
 	}
 }
 
-void UCommonUtilBPLibrary::PasteActors(TArray<AActor*>& OutPastedActors, UWorld* InWorld, FString* SourceData /*= nullptr*/)
+void UCommonUtilBPLibrary::PasteActors(TArray<AActor*>& OutPastedActors, FString* SourceData /*= nullptr*/)
 {
 	OutPastedActors.Reset();
+
+	auto FindWorld = [](UWorld* InWorld)->bool
+	{
+		#if WITH_EDITOR || GIsEditor
+		if (InWorld->WorldType == EWorldType::PIE)	return true;
+		#else
+		if (InWorld->WorldType == EWorldType::Game || InWorld->WorldType == EWorldType::GamePreview) return true;
+		#endif
+		return false;
+	};
+
+	UWorld* World = UCommonUtilBPLibrary::ForEachWorld(FindWorld);
+	if (World == nullptr)
+	{
+		World = UCommonUtilBPLibrary::ForEachWorld([](UWorld* InWorld){ return InWorld->WorldType == EWorldType::Editor; });
+	}
 
 	//从粘贴板中获取文本?
 	FString PasteString;
@@ -719,7 +692,7 @@ void UCommonUtilBPLibrary::PasteActors(TArray<AActor*>& OutPastedActors, UWorld*
 
 	const TCHAR* Paste = *PasteString;
 
-	FactoryCreateText(ULevel::StaticClass(), InWorld->GetCurrentLevel(), InWorld->GetCurrentLevel()->GetFName(), RF_Transactional, NULL, TEXT("paste"), Paste, Paste + FCString::Strlen(Paste), GWarn, OutPastedActors);
+	FactoryCreateText(ULevel::StaticClass(), World->GetCurrentLevel(), World->GetCurrentLevel()->GetFName(), RF_Transactional, NULL, TEXT("paste"), Paste, Paste + FCString::Strlen(Paste), GWarn, OutPastedActors);
 }
 
 void UCommonUtilBPLibrary::CopyActorsTest(TArray<AActor*> Actors)
@@ -727,7 +700,7 @@ void UCommonUtilBPLibrary::CopyActorsTest(TArray<AActor*> Actors)
 	CopyActors(Actors);
 }
 
-void UCommonUtilBPLibrary::PasteActorsTest(TArray<AActor*> OutPastedActors, UObject* InWorld)
+void UCommonUtilBPLibrary::PasteActorsTest(TArray<AActor*> OutPastedActors)
 {
-	PasteActors(OutPastedActors, InWorld->GetWorld());
+	PasteActors(OutPastedActors);
 }

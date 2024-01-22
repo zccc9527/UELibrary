@@ -375,7 +375,7 @@ static const TCHAR* ImportProperties(
 			// Note: default properties subobjects have compiled class as their Outer (used for localization).
 			UClass*	TemplateClass = NULL;
 			bool bInvalidClass = false;
-			ParseObject<UClass>(Str, TEXT("Class="), TemplateClass, ANY_PACKAGE, &bInvalidClass);
+			ParseObject<UClass>(Str, TEXT("Class="), TemplateClass, nullptr, &bInvalidClass);
 			
 			if (bInvalidClass)
 			{
@@ -431,8 +431,7 @@ static const TCHAR* ImportProperties(
 			if (bRedefiningSubobject)
 			{
 				// since we're redefining an object in the same text block, only need to import properties again
-				SourceText = ImportObjectProperties2( (uint8*)BaseTemplate, SourceText, TemplateClass, SubobjectRoot, BaseTemplate,
-													Warn, Depth + 1, ContextSupplier ? ContextSupplier->CurrentLine : 0, &InstanceGraph, ActorRemapper );
+				SourceText = ImportObjectProperties2( (uint8*)BaseTemplate, SourceText, TemplateClass, SubobjectRoot, BaseTemplate, Warn, Depth + 1, ContextSupplier ? ContextSupplier->CurrentLine : 0, &InstanceGraph, ActorRemapper );
 			}
 			else 
 			{
@@ -450,17 +449,23 @@ static const TCHAR* ImportProperties(
 					{
 						// if given a name, break it up along the ' so separate the class from the name
 						FString ObjectClass;
-						FString ObjectPath;
-						if ( FPackageName::ParseExportTextPath(ArchetypeName, &ObjectClass, &ObjectPath) )
+						FString ArchetypePath;
+						if ( FPackageName::ParseExportTextPath(ArchetypeName, &ObjectClass, &ArchetypePath) )
 						{
 							// find the class
-							UClass* ArchetypeClass = (UClass*)StaticFindObject(UClass::StaticClass(), ANY_PACKAGE, *ObjectClass);
+							UClass* ArchetypeClass = (UClass*)StaticFindObject(UClass::StaticClass(), nullptr, *ObjectClass);
 							if (ArchetypeClass)
 							{
-								ObjectPath = ObjectPath.TrimQuotes();
-								UPackage* FindInPackage = (FPackageName::IsShortPackageName(ObjectPath) ? ANY_PACKAGE : nullptr);
+								ArchetypePath = ArchetypePath.TrimQuotes();
 								// if we had the class, find the archetype
-								Archetype = StaticFindObject(ArchetypeClass, FindInPackage, *ObjectPath);
+								if (!FPackageName::IsShortPackageName(ArchetypePath))
+								{
+									Archetype = StaticFindObject(ArchetypeClass, nullptr, *ArchetypePath);
+								}
+								else
+								{
+									Archetype = StaticFindFirstObject(ArchetypeClass, *ArchetypePath, EFindFirstObjectOptions::NativeFirst | EFindFirstObjectOptions::EnsureIfAmbiguous);
+								}
 							}
 						}
 					}
