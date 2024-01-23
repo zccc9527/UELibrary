@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "CommonUtilBPLibrary.h"
 #include "CommonUtil.h"
@@ -463,7 +463,7 @@ UObject* FactoryCreateText(UClass* Class, UObject* InParent, FName Name, EObject
 		}
 	}
 
-	//µ¼ÈëÊôĞÔ
+	//å¯¼å…¥å±æ€§
 	for (auto ActorMapElement : NewActorMap)
 	{
 		AActor* Actor = ActorMapElement.Key;
@@ -644,7 +644,7 @@ void UCommonUtilBPLibrary::CopyActors(TArray<AActor*> Actors, FString* Destinati
 	UWorld* World = Actors[0]->GetWorld();
 	if (World)
 	{
-		// µ¼³öActorÊı¾İ
+		// å¯¼å‡ºActoræ•°æ®
 		FStringOutputDevice Ar;
 		const FSESelectedActorExportObjectInnerContext Context(Actors);
 		UExporter::ExportToOutputDevice(&Context, World, NULL, Ar, TEXT("copy"), 0, PPF_DeepCompareInstances | PPF_ExportsNotFullyQualified);
@@ -679,7 +679,7 @@ void UCommonUtilBPLibrary::PasteActors(TArray<AActor*>& OutPastedActors, FString
 		World = UCommonUtilBPLibrary::ForEachWorld([](UWorld* InWorld){ return InWorld->WorldType == EWorldType::Editor; });
 	}
 
-	//´ÓÕ³Ìù°åÖĞ»ñÈ¡ÎÄ±¾?
+	//ä»ç²˜è´´æ¿ä¸­è·å–æ–‡æœ¬?
 	FString PasteString;
 	if (SourceData)
 	{

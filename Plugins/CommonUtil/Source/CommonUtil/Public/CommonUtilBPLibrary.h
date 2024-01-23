@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #pragma once
 
@@ -22,7 +22,7 @@ bool GetEND2(const TCHAR** Stream, const TCHAR* Match);
 bool GetREMOVE2(const TCHAR** Stream, const TCHAR* Match);
 
 /* 
-* Í¨ÓÃĞ¡¹¦ÄÜ¿â
+* é€šç”¨å°åŠŸèƒ½åº“
 */
 UCLASS()
 class COMMONUTIL_API UCommonUtilBPLibrary : public UBlueprintFunctionLibrary
@@ -31,57 +31,57 @@ class COMMONUTIL_API UCommonUtilBPLibrary : public UBlueprintFunctionLibrary
 
 public:
 	/*
-	* ¸ù¾İÌõ¼ş²éÕÒÊÀ½ç
-	* @param InTriggerFunc		Ìõ¼ş±í´ïÊ½
-	* @param args				ÊÇ·ñµİ¹éÃ¿¸ö×ÓÎÄ¼ş¼Ğ
-	* @return					·µ»Ø²éÕÒµ½µÄÊÀ½ç
+	* æ ¹æ®æ¡ä»¶æŸ¥æ‰¾ä¸–ç•Œ
+	* @param InTriggerFunc		æ¡ä»¶è¡¨è¾¾å¼
+	* @param args				æ˜¯å¦é€’å½’æ¯ä¸ªå­æ–‡ä»¶å¤¹
+	* @return					è¿”å›æŸ¥æ‰¾åˆ°çš„ä¸–ç•Œ
 	*/
 	static UWorld* ForEachWorld(TFunction<bool(UWorld*)> InTriggerFunc);
 
 	/*
-	* ¸ù¾İÀàĞÍ²éÕÒ×Ê²ú
-	* @param InClass			ÀàĞÍÊı×é
-	* @param bRecursivePaths	ÊÇ·ñµİ¹éÃ¿¸ö×ÓÎÄ¼ş¼Ğ
-	* @return					·µ»Ø²éÕÒµ½µÄ×Ê²úÊı×é
+	* æ ¹æ®ç±»å‹æŸ¥æ‰¾èµ„äº§
+	* @param InClass			ç±»å‹æ•°ç»„
+	* @param bRecursivePaths	æ˜¯å¦é€’å½’æ¯ä¸ªå­æ–‡ä»¶å¤¹
+	* @return					è¿”å›æŸ¥æ‰¾åˆ°çš„èµ„äº§æ•°ç»„
 	*/
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static TArray<UObject*> FindObjectsByClass(TArray<UClass*> InClass, bool bRecursivePaths = false);
 
 	/*
-	* ¸ù¾İÀàĞÍ¼°Â·¾¶²éÕÒ×Ê²ú
-	* @param InClass			ÀàĞÍÊı×é
-	* @param PackagePaths		ÎÄ¼ş¼ĞÂ·¾¶Êı×é
-	* @param bRecursivePaths	ÊÇ·ñµİ¹éÃ¿¸ö×ÓÎÄ¼ş¼Ğ
-	* @return					·µ»Ø²éÕÒµ½µÄ×Ê²úÊı×é
+	* æ ¹æ®ç±»å‹åŠè·¯å¾„æŸ¥æ‰¾èµ„äº§
+	* @param InClass			ç±»å‹æ•°ç»„
+	* @param PackagePaths		æ–‡ä»¶å¤¹è·¯å¾„æ•°ç»„
+	* @param bRecursivePaths	æ˜¯å¦é€’å½’æ¯ä¸ªå­æ–‡ä»¶å¤¹
+	* @return					è¿”å›æŸ¥æ‰¾åˆ°çš„èµ„äº§æ•°ç»„
 	*/
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static TArray<UObject*> FindObjectsByClassAndPaths(TArray<UClass*> InClass, TArray<FString> PackagePaths, bool bRecursivePaths = false);
 
 	/*
-	* ·µ»Øµ±Ç°Êó±êÎ»ÖÃµÄ¿Ø¼ş,¿ÉÄÜÊÇnullptr
+	* è¿”å›å½“å‰é¼ æ ‡ä½ç½®çš„æ§ä»¶,å¯èƒ½æ˜¯nullptr
 	*/
 	static TSharedPtr<SWidget> GetSlateWidgetUnderCursor();
 
 	/*
-	* ·µ»ØÄ³¸öÎ»ÖÃµÄ¿Ø¼ş,¿ÉÄÜÊÇnullptr
+	* è¿”å›æŸä¸ªä½ç½®çš„æ§ä»¶,å¯èƒ½æ˜¯nullptr
 	*/
 	static TSharedPtr<SWidget> GetSlateWidgetOnPosition(FVector2D InPosition);
 
 	/*
-	* ²éÕÒÂ·¾¶ÏÂËùÓĞÏàÍ¬ºó×ºÎÄ¼ş
-	* @param InPath				²éÕÒÂ·¾¶
-	* @param Extension			ºó×º
-	* @param bRecursive			ÊÇ·ñµİ¹éÃ¿¸ö×ÓÎÄ¼ş¼Ğ
-	* @param bDirectories		Ä¬ÈÏfalse
-	* @return					·µ»Ø²éÕÒµ½µÄÎÄ¼şÂ·¾¶Êı×é
+	* æŸ¥æ‰¾è·¯å¾„ä¸‹æ‰€æœ‰ç›¸åŒåç¼€æ–‡ä»¶
+	* @param InPath				æŸ¥æ‰¾è·¯å¾„
+	* @param Extension			åç¼€
+	* @param bRecursive			æ˜¯å¦é€’å½’æ¯ä¸ªå­æ–‡ä»¶å¤¹
+	* @param bDirectories		é»˜è®¤false
+	* @return					è¿”å›æŸ¥æ‰¾åˆ°çš„æ–‡ä»¶è·¯å¾„æ•°ç»„
 	*/
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static TArray<FString> FindFiles(const FString& InPath, const FString& Extension, bool bRecursive = false, bool bDirectories = false);
 
 	/*
-	* ½«¿Ø¼şÌí¼Óµ½ÊÓ¿ÚÉÏ
-	* @param InWidget			´ıÌí¼ÓµÄ¿Ø¼ş
-	* @param InSize				¿Ø¼ş´óĞ¡
+	* å°†æ§ä»¶æ·»åŠ åˆ°è§†å£ä¸Š
+	* @param InWidget			å¾…æ·»åŠ çš„æ§ä»¶
+	* @param InSize				æ§ä»¶å¤§å°
 	*/
 	//UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static void AddWidgetToViewport(TSharedPtr<SWidget> InWidget, FVector2D InPosition, FVector2D InSize, FVector2D InAlignment, int32 InZOrder = -1);
@@ -91,42 +91,42 @@ public:
 
 	#if WITH_EDITOR
 	/*
-	* »ñµÃµ±Ç°Ñ¡ÖĞµÄUObject
+	* è·å¾—å½“å‰é€‰ä¸­çš„UObject
 	*/
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static TArray<UObject*> GetCurrentSelectedObjects();
 
 	/*
-	* »ñµÃµ±Ç°Ñ¡ÖĞµÄAActor
+	* è·å¾—å½“å‰é€‰ä¸­çš„AActor
 	*/
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static TArray<AActor*> GetCurrentSelectedActors();
 	#endif
 
 	/*
-	* ¸´ÖÆÎïÌåÈ«²¿ĞÅÏ¢
-	* @param Actors				´ı¸´ÖÆµÄÎïÌåÊı×é
-	* @param DestinationData	¸´ÖÆ³öÀ´µÄÎÄ±¾ĞÅÏ¢,Îª¿ÕÖ¸ÕëÊ±½«¸´ÖÆµÄÎÄ±¾¸øµ½Õ³Ìù°å
+	* å¤åˆ¶ç‰©ä½“å…¨éƒ¨ä¿¡æ¯
+	* @param Actors				å¾…å¤åˆ¶çš„ç‰©ä½“æ•°ç»„
+	* @param DestinationData	å¤åˆ¶å‡ºæ¥çš„æ–‡æœ¬ä¿¡æ¯,ä¸ºç©ºæŒ‡é’ˆæ—¶å°†å¤åˆ¶çš„æ–‡æœ¬ç»™åˆ°ç²˜è´´æ¿
 	*/
 	static void CopyActors(TArray<AActor*> Actors, FString* DestinationData = nullptr);
 	
 	/*
-	* ¸ù¾İÎÄ±¾ĞÅÏ¢Õ³ÌùÎïÌå
-	* @param Actors				Õ³ÌùºóµÄÎïÌåÊı×é
-	* @param DestinationData	Õ³ÌùµÄÎÄ±¾ĞÅÏ¢,Îª¿ÕÖ¸ÕëÊ±´ÓÕ³Ìù°åÈ¡ÎÄ±¾
+	* æ ¹æ®æ–‡æœ¬ä¿¡æ¯ç²˜è´´ç‰©ä½“
+	* @param Actors				ç²˜è´´åçš„ç‰©ä½“æ•°ç»„
+	* @param DestinationData	ç²˜è´´çš„æ–‡æœ¬ä¿¡æ¯,ä¸ºç©ºæŒ‡é’ˆæ—¶ä»ç²˜è´´æ¿å–æ–‡æœ¬
 	*/
 	static void PasteActors(TArray<AActor*>& OutPastedActors, FString* SourceData = nullptr);
 
-	/**-------¹¦ÄÜ²âÊÔ----------*/
+	/**-------åŠŸèƒ½æµ‹è¯•----------*/
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static void CopyActorsTest(TArray<AActor*> Actors);
 	UFUNCTION(BlueprintCallable, Category = "CommonUtil")
 	static void PasteActorsTest(TArray<AActor*> OutPastedActors);
-	/**-------¹¦ÄÜ²âÊÔ----------*/
+	/**-------åŠŸèƒ½æµ‹è¯•----------*/
 };
 
 /**
-* ĞèÒªAddToRootµÄ´úÀíÀà£¬¹¹Ôì×Ô¶¯AddToRoot,Îö¹¹×Ô¶¯RemoveFromRoot
+* éœ€è¦AddToRootçš„ä»£ç†ç±»ï¼Œæ„é€ è‡ªåŠ¨AddToRoot,ææ„è‡ªåŠ¨RemoveFromRoot
 */
 template<typename T = UObject>
 class COMMONUTIL_API FRootedUObject
@@ -163,9 +163,9 @@ namespace Tmp
 	{
 		static constexpr T value = v;
 		using value_type = T;
-		using type = integral_constant; //Ö¸Ïò±¾ÉíÀàĞÍ£¬Æğµ½¼ò±ãÊ¹ÓÃµÄ×÷ÓÃ
-		constexpr value_type operator()() const noexcept { return value; } //ÖØÔØÀ¨ºÅÔËËã·û
-		constexpr operator value_type() const noexcept { return value; } //ÀàĞÍ×ª»»£¬¿ÉÒÔ½«¸ÃÀàĞÍÒşÊ½×ª»»Îªvalue_typeÀàĞÍÊ¹ÓÃ
+		using type = integral_constant; //æŒ‡å‘æœ¬èº«ç±»å‹ï¼Œèµ·åˆ°ç®€ä¾¿ä½¿ç”¨çš„ä½œç”¨
+		constexpr value_type operator()() const noexcept { return value; } //é‡è½½æ‹¬å·è¿ç®—ç¬¦
+		constexpr operator value_type() const noexcept { return value; } //ç±»å‹è½¬æ¢ï¼Œå¯ä»¥å°†è¯¥ç±»å‹éšå¼è½¬æ¢ä¸ºvalue_typeç±»å‹ä½¿ç”¨
 	};
 
 	template<bool B>
@@ -225,7 +225,7 @@ namespace Tmp
 	template<typename T, typename F, typename... Args>
 	constexpr bool is_any_of_v = is_any_of<T, F, Args...>::value;
 
-	//±àÒëÆÚ¼äµÄif
+	//ç¼–è¯‘æœŸé—´çš„if
 	template<bool B, typename T, typename F>
 	struct COMMONUTIL_API conditional;
 	template<typename T, typename F>
@@ -235,7 +235,7 @@ namespace Tmp
 	template<bool B, typename T, typename F>
 	using conditional_t = typename conditional<B, T, F>::type;
 
-	//ÅĞ¶Ï±äÁ¿´óĞ¡
+	//åˆ¤æ–­å˜é‡å¤§å°
 	template<typename T, std::size_t v>
 	struct COMMONUTIL_API is_equal_size : conditional_t<sizeof(T) == v, true_type, false_type> {};
 	template<typename T, std::size_t v>
@@ -261,7 +261,7 @@ namespace Tmp
 	template<typename T>
 	add_Rreference<T> declval();
 
-	//¼ì²éÄ£°åÀàĞÍÊÇ·ñÊÇ¿ÉÒÔ¿½±´µÄ(Ö»ÅĞ¶Ï¸³ÖµÔËËã·ûÄÜ·ñÊ¹ÓÃ)
+	//æ£€æŸ¥æ¨¡æ¿ç±»å‹æ˜¯å¦æ˜¯å¯ä»¥æ‹·è´çš„(åªåˆ¤æ–­èµ‹å€¼è¿ç®—ç¬¦èƒ½å¦ä½¿ç”¨)
 	template <typename T, typename = void>
 	struct COMMONUTIL_API is_copyable : false_type {};
 	template <typename T>
@@ -269,7 +269,7 @@ namespace Tmp
 	template <typename T>
 	constexpr bool is_copyable_v = is_copyable<T>::value;
 
-	//¼ì²éÄ£°åÀàĞÍÊÇ·ñÊÇ¿ÉÒÔ¿½±´µÄ(Ö»ÅĞ¶Ï¸³ÖµÔËËã·ûÄÜ·ñÊ¹ÓÃ)
+	//æ£€æŸ¥æ¨¡æ¿ç±»å‹æ˜¯å¦æ˜¯å¯ä»¥æ‹·è´çš„(åªåˆ¤æ–­èµ‹å€¼è¿ç®—ç¬¦èƒ½å¦ä½¿ç”¨)
 	/*template <typename T, typename = void>
 	struct is_copyable_assign : false_type {};
 	template <typename T>
@@ -277,7 +277,7 @@ namespace Tmp
 	template <typename T>
 	constexpr bool is_copyable_assign_v = is_copyable_assign<T>::value;*/
 
-	//ÅĞ¶Ï¸ÃÀàĞÍÊÇ·ñ´æÔÚÄ¬ÈÏ¹¹Ôìº¯Êı
+	//åˆ¤æ–­è¯¥ç±»å‹æ˜¯å¦å­˜åœ¨é»˜è®¤æ„é€ å‡½æ•°
 	template<typename T, typename U = void_t<>>
 	struct COMMONUTIL_API Has_DefaultConstructor : false_type {};
 	template<typename T>
@@ -285,7 +285,7 @@ namespace Tmp
 	template<typename T>
 	constexpr bool Has_DefaultConstructor_v = Has_DefaultConstructor<T>::value;
 
-	//ÅĞ¶ÏÀàĞÍFromÄÜ·ñÒşÊ½×ª»»ÎªÀàĞÍTo
+	//åˆ¤æ–­ç±»å‹Fromèƒ½å¦éšå¼è½¬æ¢ä¸ºç±»å‹To
 	template<typename From, typename To>
 	struct COMMONUTIL_API Is_Conversion_To
 	{
@@ -300,7 +300,7 @@ namespace Tmp
 		static constexpr bool value = is_same_v<true_type, decltype(Conversion(nullptr))>;
 	};
 
-	//ÅĞ¶ÏÒ»¸öÀàĞÍÊÇ·ñÊÇÀàÀàĞÍ
+	//åˆ¤æ–­ä¸€ä¸ªç±»å‹æ˜¯å¦æ˜¯ç±»ç±»å‹
 	template<typename T>
 	struct COMMONUTIL_API Is_Calss
 	{
@@ -312,7 +312,7 @@ namespace Tmp
 		static constexpr bool value = is_same_v<true_type, decltype(Test<T>(nullptr))>;
 	};
 
-	//ÅĞ¶ÏBaseÊÇ·ñÊÇDerivedµÄ¸¸Àà
+	//åˆ¤æ–­Baseæ˜¯å¦æ˜¯Derivedçš„çˆ¶ç±»
 	template<typename Base, typename Derived>
 	struct COMMONUTIL_API Is_A
 	{
@@ -325,7 +325,7 @@ namespace Tmp
 }
 
 /**
-* ÅĞ¶ÏÄ³¸öÀàÖĞÊÇ·ñ´æÔÚtypeÀàĞÍ
+* åˆ¤æ–­æŸä¸ªç±»ä¸­æ˜¯å¦å­˜åœ¨typeç±»å‹
 */
 #ifndef DEFINE_HAS_TYPE_MEM
 #define DEFINE_HAS_TYPE_MEM(type)	\
@@ -336,7 +336,7 @@ struct _HAVE_TYPE_MEMBER_##type<T, Tmp::void_t<typename T::type>> : Tmp::true_ty
 #endif
 
 /**
-* ÅĞ¶ÏÄ³¸öÀàÖĞÊÇ·ñ´æÔÚvalue±äÁ¿
+* åˆ¤æ–­æŸä¸ªç±»ä¸­æ˜¯å¦å­˜åœ¨valueå˜é‡
 * 
 */
 #ifndef DEFINE_HAS_VALUE_MEM
@@ -348,7 +348,7 @@ struct _HAVE_VALUE_MEMBER_##value<T, Tmp::void_t<decltype(T::value)>> : Tmp::tru
 #endif
 
 /**
-* ÅĞ¶ÏÄ³¸öÀàÖĞÊÇ·ñ´æÔÚfuncº¯Êı
+* åˆ¤æ–­æŸä¸ªç±»ä¸­æ˜¯å¦å­˜åœ¨funcå‡½æ•°
 */
 #ifndef DEFINE_HAS_FUNC_MEM
 #define DEFINE_HAS_FUNC_MEM(func)	\
@@ -371,7 +371,7 @@ struct _HAVE_FUNC_MEMBER_##func<T, Tmp::void_t<decltype(Tmp::declval<T>().func()
 #define CLASS_HAS_FUNC_MEM(className, funcName) _HAVE_FUNC_MEMBER_##funcName<className>::value
 #endif
 
-#if 0	/**ÒÑÉáÆú*/
+#if 0	/**å·²èˆå¼ƒ*/
 #ifndef GeneratePrivateData
 #define GeneratePrivateData(type, member, valuetype)	\
 template<auto m>	\
@@ -397,7 +397,7 @@ template<typename Accessor, typename Accessor::Member Member> struct COMMONUTIL_
 	}
 };
 
-/**----------------»ñµÃ±£»¤/Ë½ÓĞ±äÁ¿----------------*/
+/**----------------è·å¾—ä¿æŠ¤/ç§æœ‰å˜é‡----------------*/
 #define IMPLEMENT_GET_PRIVATE_VAR(InClass, VarName, VarType) \
 struct InClass##VarName##Accessor \
 { \
@@ -411,7 +411,7 @@ template struct AccessPrivate<InClass##VarName##Accessor, &InClass::VarName>;
 #define GET_PRIVATE(InClass, InObj, MemberName) &((*InObj).*GetPrivate(InClass##MemberName##Accessor()))
 /**----------------------End----------------------*/
 
-/**----------------µ÷ÓÃ±£»¤/Ë½ÓĞº¯Êı----------------*/
+/**----------------è°ƒç”¨ä¿æŠ¤/ç§æœ‰å‡½æ•°----------------*/
 #define IMPLEMENT_GET_PRIVATE_FUNC(InClass, FuncName, FuncRet, ...)	\
 struct InClass##FuncName##Accessor	\
 {\
@@ -424,7 +424,7 @@ template struct AccessPrivate<InClass##FuncName##Accessor, &InClass::FuncName>;
 /**----------------------End----------------------*/
 
 
-/**----------------µ÷ÓÃÖØÔØµÄ±£»¤/Ë½ÓĞº¯Êı----------------*/
+/**----------------è°ƒç”¨é‡è½½çš„ä¿æŠ¤/ç§æœ‰å‡½æ•°----------------*/
 #define IMPLEMENT_GET_PRIVATE_FUNC_OVERLOAD(InClass, FuncName, FuncRet, ExpandName, ...)	\
 struct InClass##FuncName##Accessor##ExpandName	\
 {\

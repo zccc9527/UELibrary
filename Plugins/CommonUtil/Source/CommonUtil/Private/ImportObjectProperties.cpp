@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+Ôªø// Copyright Epic Games, Inc. All Rights Reserved.
 
 /*=============================================================================
 	EditorObject.cpp: Unreal Editor object manipulation code.
@@ -326,7 +326,7 @@ static const TCHAR* ImportProperties(
 	// Build list of all text properties.
 	bool ImportedBrush = 0;
 	int32 LinesConsumed = 0;
-	static float Opacity = 1.0f; //»∑±£÷ª≥ı ºªØ“ª¥Œ
+	static float Opacity = 1.0f; //Á°Æ‰øùÂè™ÂàùÂßãÂåñ‰∏ÄÊ¨°
 	while (FParse::LineExtended(&SourceText, StrLine, LinesConsumed, true))
 	{
 		// remove extra whitespace and optional semicolon from the end of the line
