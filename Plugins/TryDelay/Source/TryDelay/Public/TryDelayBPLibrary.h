@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #pragma once
 
@@ -6,139 +6,11 @@
 #include "DelayAction.h"
 #include "Templates/Function.h"
 #include "CommonUtilBPLibrary.h"
+#include "DelayManager.h"
 #include "TryDelayBPLibrary.generated.h"
 
-/*
-* ÑÓ³ÙTFunction±í´ïÊ½
-*/
-class FTFunctionDelayAction : public FPendingLatentAction
-{
-public:
-	FTFunctionDelayAction(float InDuration, TFunction<void()> InTriggerFunc) : Duration(InDuration), TriggerFunc(InTriggerFunc){}
-
-	void SetDuration(float InDuration) { Duration = InDuration; }
-private:
-	float Duration;
-	TFunction<void()> TriggerFunc;
-	virtual void UpdateOperation(FLatentResponse& Response) override
-	{
-		Duration -= Response.ElapsedTime();
-		bool Ok = Duration <= 0.f;
-		if (Ok)
-		{
-			TriggerFunc();
-		}
-		Response.DoneIf(Ok);
-	}
-};
-
-/*
-* ÑÓ³ÙLambda±í´ïÊ½
-*/
-template<typename TLambda, typename...Args>
-class FLambdaDelayAction : public FPendingLatentAction
-{
-public:
-	FLambdaDelayAction(float InDuration, TLambda InTriggerFunc, Args...args) : Duration(InDuration), TriggerFunc(InTriggerFunc), m_payload(std::forward<Args>(args)...) {}
-
-	void SetDuration(float InDuration) { Duration = InDuration; }
-private:
-	float Duration = -1.0f;
-	TLambda TriggerFunc;
-	std::tuple<Args...> m_payload;
-
-	template <std::size_t... Index>
-	struct Indices {};
-
-	//Éú³É0µ½N-1µÄË÷Òı
-	template <std::size_t N, std::size_t... Index>
-	struct build_inds
-	{
-		typedef typename build_inds<N - 1, N - 1, Index...>::type type;
-	};
-	template <std::size_t... Index>
-	struct build_inds<0, Index...>
-	{
-		typedef Indices<Index...> type;
-	};
-
-	template<std::size_t... Index>
-	void Execute(Indices<Index...> Ind)
-	{
-		TriggerFunc(std::get<Index>(m_payload)...);
-	}
-
-	virtual void UpdateOperation(FLatentResponse& Response) override
-	{
-		Duration -= Response.ElapsedTime();
-		bool Ok = Duration <= 0.f;
-		if (Ok)
-		{
-			Execute(build_inds<sizeof...(Args)>::type());
-		}
-		Response.DoneIf(Ok);
-	}
-};
-
-/*
-* ÑÓ³ÙÔ­ÉúÀà³ÉÔ±º¯Êı
-*/
-template<class C, typename... Args>
-class FRawDelayAction : public FPendingLatentAction
-{
-public:
-	using FuncPtr = void(C::*)(Args...);
-	FRawDelayAction(float InDuration, C* p, FuncPtr pf, Args... args)
-	{
-		Duration = InDuration;
-		TriggerFunc.BindRaw(p, pf, args...);
-	};
-
-	void SetDuration(float InDuration) { Duration = InDuration; }
-private:
-	float Duration;
-	TDelegate<void(void)> TriggerFunc;
-	virtual void UpdateOperation(FLatentResponse& Response) override
-	{
-		Duration -= Response.ElapsedTime();
-		bool Ok = Duration <= 0.f;
-		if (Ok)
-		{
-			TriggerFunc.ExecuteIfBound();
-		}
-		Response.DoneIf(Ok);
-	}
-};
-
-/*
-* ÑÓ³ÙUObjectÀà³ÉÔ±º¯Êı
-*/
-template<class C, typename... Args>
-class FObjectDelayAction : public FPendingLatentAction
-{
-public:
-	using FuncPtr = void(C::*)(Args...);
-	FObjectDelayAction(float InDuration, C* p, FuncPtr pf, Args... args)
-	{
-		Duration = InDuration;
-		TriggerFunc.BindUObject(p, pf, args...);
-	};
-
-	void SetDuration(float InDuration) { Duration = InDuration; }
-private:
-	float Duration;
-	TDelegate<void(void)> TriggerFunc;
-	virtual void UpdateOperation(FLatentResponse& Response) override
-	{
-		Duration -= Response.ElapsedTime();
-		bool Ok = Duration <= 0.f;
-		if (Ok)
-		{
-			TriggerFunc.ExecuteIfBound();
-		}
-		Response.DoneIf(Ok);
-	}
-};
+DECLARE_DELEGATE_RetVal(bool, FDelayDelegate);
+DECLARE_DYNAMIC_DELEGATE_RetVal(bool, FDelayDynamicDelegate);
 
 UCLASS()
 class TRYDELAY_API UTryDelayBPLibrary : public UBlueprintFunctionLibrary
@@ -147,96 +19,201 @@ class TRYDELAY_API UTryDelayBPLibrary : public UBlueprintFunctionLibrary
 
 public:
 	/**
-	* ¸ù¾İº¯ÊıÃû×ÖÑÓ³Ùµ÷ÓÃ
-	* @param CallbackTarget			ĞèÒªÑÓ³Ùµ÷ÓÃº¯ÊıµÄ¶ÔÏó
-	* @param uuid					±êÊ¶·û,Îª-1Ê±×Ô¶¯Ôö¼Ó
-	* @param ExecutionFunction		ĞèÒªÑÓ³Ùµ÷ÓÃµÄº¯ÊıÃû×Ö
-	* @param Duration				ÑÓ³Ùµ÷ÓÃµÄÊ±¼ä
-	* @param bRetriggerable			ÊÇ·ñÄÜ¹»ÖØÖÃÊ±¼ä
+	* æ ¹æ®å‡½æ•°åå­—å»¶è¿Ÿè°ƒç”¨
+	* @param CallbackTarget			éœ€è¦å»¶è¿Ÿè°ƒç”¨å‡½æ•°çš„å¯¹è±¡
+	* @param uuid					æ ‡è¯†ç¬¦,ä¸º-1æ—¶è‡ªåŠ¨ç”Ÿæˆå”¯ä¸€æ ‡è¯†ç¬¦
+	* @param ExecutionFunction		éœ€è¦å»¶è¿Ÿè°ƒç”¨çš„å‡½æ•°åå­—
+	* @param Duration				å»¶è¿Ÿè°ƒç”¨çš„æ—¶é—´
+	* @param bRetriggerable			æ˜¯å¦èƒ½å¤Ÿé‡ç½®æ—¶é—´
+	* @return						è¿”å›æ ‡è¯†ç¬¦,å¯æ ¹æ®æ ‡è¯†ç¬¦åœ¨å»¶è¿Ÿæ—¶é—´å‰é‡ç½®æ—¶é—´
 	*/
 	UFUNCTION(BlueprintCallable, Category = "TryDelay")
-	static void DelayFunctionName(UObject* CallbackTarget, int32 uuid, FName ExecutionFunction, float Duration, bool bRetriggerable = true);
+	static int32 DelayFunctionName(UObject* CallbackTarget, int32 uuid, FName ExecutionFunction, float Duration, bool bRetriggerable = false);
 
-	/**
-	* ÑÓ³Ùµ÷ÓÃLambda±í´ïÊ½/ÎŞ²ÎÊı,ÎŞ·µ»ØÖµ
-	* @param CallbackTarget			ĞèÒªÑÓ³Ùµ÷ÓÃº¯ÊıµÄ¶ÔÏó
-	* @param uuid					±êÊ¶·û,Îª-1Ê±×Ô¶¯Ôö¼Ó
-	* @param ExecutionFunction		ĞèÒªÑÓ³Ùµ÷ÓÃµÄº¯ÊıÃû×Ö
-	* @param Duration				ÑÓ³Ùµ÷ÓÃµÄÊ±¼ä
-	* @param bRetriggerable			ÊÇ·ñÄÜ¹»ÖØÖÃÊ±¼ä
-	*/
-	static void DelayLambda(int32 uuid, float Duration, TFunction<void()> InTriggerFunc, bool bRetriggerable = true);
+	UFUNCTION(BlueprintCallable, Category = "TryDelay")
+	static void DelayFunctionNameForNextTick(UObject* CallbackTarget, FName ExecutionFunction);
 
+	template<typename TLambda, typename... Args>
+	static void ExecuteOnTick(TLambda InFunc, Args...args);
 	/**
-	* ÑÓ³Ùµ÷ÓÃLambda±í´ïÊ½/ÓĞ²ÎÊı,ÎŞ·µ»ØÖµ
-	* @param CallbackTarget			ĞèÒªÑÓ³Ùµ÷ÓÃº¯ÊıµÄ¶ÔÏó
-	* @param uuid					±êÊ¶·û,Îª-1Ê±×Ô¶¯Ôö¼Ó
-	* @param ExecutionFunction		ĞèÒªÑÓ³Ùµ÷ÓÃµÄº¯ÊıÃû×Ö
-	* @param Duration				ÑÓ³Ùµ÷ÓÃµÄÊ±¼ä
-	* @param bRetriggerable			ÊÇ·ñÄÜ¹»ÖØÖÃÊ±¼ä
+	* å»¶è¿Ÿè°ƒç”¨Lambdaè¡¨è¾¾å¼
+	* @param uuid					æ ‡è¯†ç¬¦,ä¸º-1æ—¶è‡ªåŠ¨ç”Ÿæˆå”¯ä¸€æ ‡è¯†ç¬¦
+	* @param Duration				å»¶è¿Ÿè°ƒç”¨çš„æ—¶é—´
+	* @param bRetriggerable			æ˜¯å¦èƒ½å¤Ÿé‡ç½®æ—¶é—´
+	* @param InTriggerFunc			Lambdaè¡¨è¾¾å¼
+	* @param args					é‡è½½å‚æ•°
+	* @return						è¿”å›æ ‡è¯†ç¬¦,å¯æ ¹æ®æ ‡è¯†ç¬¦åœ¨å»¶è¿Ÿæ—¶é—´å‰é‡ç½®æ—¶é—´
 	*/
 	template<typename TLambda, typename...Args>
-	static void DelayLambda_Params(int32 uuid, float Duration, TLambda Lambda, Args...args)
+	static int32 DelayLambda(int32 uuid, float Duration, bool bRetriggerable, TLambda InTriggerFunc, Args...args);
+
+	template<typename TLambda, typename...Args>
+	static void DelayLambdaForNextTick(TLambda InTriggerFunc, Args...args);
+
+	/**
+	* å»¶è¿Ÿè°ƒç”¨UObjectçš„ç±»æˆå‘˜å‡½æ•°
+	* @param Obj					éœ€è¦å»¶è¿Ÿè°ƒç”¨å‡½æ•°çš„å¯¹è±¡
+	* @param uuid					æ ‡è¯†ç¬¦,ä¸º-1æ—¶è‡ªåŠ¨ç”Ÿæˆå”¯ä¸€æ ‡è¯†ç¬¦
+	* @param Duration				å»¶è¿Ÿè°ƒç”¨çš„æ—¶é—´
+	* @param bRetriggerable			æ˜¯å¦èƒ½å¤Ÿé‡ç½®æ—¶é—´
+	* @param pf						å»¶è¿Ÿè°ƒç”¨çš„UObjectæˆå‘˜å‡½æ•°
+	* @param args					é‡è½½å‚æ•°
+	* @return						è¿”å›æ ‡è¯†ç¬¦,å¯æ ¹æ®æ ‡è¯†ç¬¦åœ¨å»¶è¿Ÿæ—¶é—´å‰é‡ç½®æ—¶é—´
+	*/
+	template<class C, typename... Args>
+	static int32 DelayMemberFunction(UObject* Obj, int32 uuid, float Duration, bool bRetriggerable, bool(C::* pf)(Args...), Args... args);
+
+	template<typename... Args>
+	static int32 DelayMemberFunction(int32 uuid, float Duration, const FDelayDelegate& InDelegate, bool bRetriggerable = false);
+
+	template<typename... Args>
+	static void DelayMemberFunctionForNextTick(const FDelayDelegate& InDelegate);
+
+	/**
+	* å»¶è¿Ÿè°ƒç”¨åŸç”ŸC++ç±»çš„æˆå‘˜å‡½æ•°
+	* @param Obj				éœ€è¦è°ƒç”¨çš„æˆå‘˜å‡½æ•°çš„ç±»å¯¹è±¡
+	* @param uuid				æ ‡è¯†ç¬¦,ä¸º-1æ—¶è‡ªåŠ¨ç”Ÿæˆå”¯ä¸€æ ‡è¯†ç¬¦
+	* @param Duration			å»¶è¿Ÿè°ƒç”¨çš„æ—¶é—´
+	* @param bRetriggerable		æ˜¯å¦èƒ½å¤Ÿé‡ç½®æ—¶é—´
+	* @param pf					ç±»æˆå‘˜å‡½æ•°æŒ‡é’ˆ
+	* @param args				éœ€è¦è°ƒç”¨çš„å‡½æ•°å‚æ•°
+	* @return					è¿”å›æ ‡è¯†ç¬¦,å¯æ ¹æ®æ ‡è¯†ç¬¦åœ¨å»¶è¿Ÿæ—¶é—´å‰é‡ç½®æ—¶é—´
+	*/
+	template<class C, typename... Args>
+	static int32 DelayRawFunction(C* Obj, int32 uuid, float Duration, bool bRetriggerable, bool(C::* pf)(Args...), Args... args);
+
+	template<typename... Args>
+	static int32 DelayRawFunction(int32 uuid, float Duration, const FDelayDelegate& InDelegate, bool bRetriggerable = false);
+
+	template<typename... Args>
+	static void DelayRawFunctionForNextTick(const FDelayDelegate& InDelegate);
+};
+
+template<typename TLambda, typename...Args>
+void UTryDelayBPLibrary::ExecuteOnTick(TLambda InFunc, Args...args)
+{
+	auto FindWorld = [](UWorld* InWorld)->bool
 	{
-		auto FindWorld = [](UWorld* InWorld)->bool
-		{
-			#if WITH_EDITOR || GIsEditor
-			if (InWorld->WorldType == EWorldType::PIE)	return true;
-			#else
-			if (InWorld->WorldType == EWorldType::Game || InWorld->WorldType == EWorldType::GamePreview) return true;
-			#endif
-			return false;
-		};
+		#if WITH_EDITOR || GIsEditor
+		if (InWorld->WorldType == EWorldType::PIE)	return true;
+		#else
+		if (InWorld->WorldType == EWorldType::Game || InWorld->WorldType == EWorldType::GamePreview) return true;
+		#endif
+		return false;
+	};
 
-		UWorld* World = UCommonUtilBPLibrary::ForEachWorld(FindWorld);
-		if (World == nullptr) return;
-
-		static int32 NewId = 0;
-		if (uuid == -1)
-		{
-			uuid = ++NewId;
-		}
-
+	UWorld* World = UCommonUtilBPLibrary::ForEachWorld(FindWorld);
+	if (World == nullptr) World = GWorld ? GWorld->GetWorld() : nullptr;
+	if (World == nullptr) return;
+	if (World)
+	{
 		FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
-		FLambdaDelayAction<TLambda, Args...>* LambdaDelayAction = LatentActionManager.FindExistingAction<FLambdaDelayAction<TLambda, Args...>>(World, uuid);
-		if (LambdaDelayAction == nullptr)
+
+		uint32 uuid = UCommonUtilBPLibrary::GenerateUniqueID();
+
+		FTickableFunctor<TLambda, Args...>* DelayAction = LatentActionManager.FindExistingAction<FTickableFunctor<TLambda, Args...>>(World, uuid);
+		if (DelayAction == nullptr)
 		{
-			LatentActionManager.AddNewAction(World, uuid, new FLambdaDelayAction<TLambda, Args...>(Duration, Lambda, args...));
+			LatentActionManager.AddNewAction(World, uuid, new FTickableFunctor<TLambda, Args...>(InFunc, args...));
 		}
-		else
+	}
+}
+
+template<typename TLambda, typename...Args>
+int32 UTryDelayBPLibrary::DelayLambda(int32 uuid, float Duration, bool bRetriggerable, TLambda InTriggerFunc, Args...args)
+{
+	auto FindWorld = [](UWorld* InWorld)->bool
+	{
+		#if WITH_EDITOR || GIsEditor
+		if (InWorld->WorldType == EWorldType::PIE)	return true;
+		#else
+		if (InWorld->WorldType == EWorldType::Game || InWorld->WorldType == EWorldType::GamePreview) return true;
+		#endif
+		return false;
+	};
+
+	UWorld* World = UCommonUtilBPLibrary::ForEachWorld(FindWorld);
+	if (World == nullptr) World = GWorld ? GWorld->GetWorld() : nullptr;
+	if (World == nullptr) return -1;
+
+	if (uuid == -1)
+	{
+		uuid = UCommonUtilBPLibrary::GenerateUniqueID();
+	}
+
+	FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+	FLambdaDelayAction<TLambda, Args...>* LambdaDelayAction = LatentActionManager.FindExistingAction<FLambdaDelayAction<TLambda, Args...>>(World, uuid);
+	if (LambdaDelayAction == nullptr)
+	{
+		LatentActionManager.AddNewAction(World, uuid, new FLambdaDelayAction<TLambda, Args...>(Duration, InTriggerFunc, args...));
+	}
+	else
+	{
+		if (bRetriggerable)
 		{
 			LambdaDelayAction->SetDuration(Duration);
 		}
-		NewId = uuid;
+	}
+	return uuid;
+}
+
+template<typename TLambda, typename...Args>
+void UTryDelayBPLibrary::DelayLambdaForNextTick(TLambda InTriggerFunc, Args...args)
+{
+	UTryDelayBPLibrary::DelayLambda(-1, 0.0f, false, InTriggerFunc, args...);
+}
+
+template<class C, typename...Args>
+int32 UTryDelayBPLibrary::DelayMemberFunction(UObject* Obj, int32 uuid, float Duration, bool bRetriggerable, bool(C::* pf)(Args...), Args... args)
+{
+	UWorld* World = Obj->GetWorld();
+	if (World == nullptr)
+		return -1;
+
+	if (uuid == -1)
+	{
+		uuid = UCommonUtilBPLibrary::GenerateUniqueID();
 	}
 
-	/**
-	* ¸ù¾İº¯ÊıÃû×ÖÑÓ³Ùµ÷ÓÃ
-	* @param CallbackTarget			ĞèÒªÑÓ³Ùµ÷ÓÃº¯ÊıµÄ¶ÔÏó
-	* @param uuid					±êÊ¶·û,Îª-1Ê±×Ô¶¯Ôö¼Ó
-	* @param ExecutionFunction		ĞèÒªÑÓ³Ùµ÷ÓÃµÄº¯ÊıÃû×Ö
-	* @param Duration				ÑÓ³Ùµ÷ÓÃµÄÊ±¼ä
-	* @param bRetriggerable			ÊÇ·ñÄÜ¹»ÖØÖÃÊ±¼ä
-	*/
-	template<class C, typename... Args>
-	static void DelayMemberFunction(UObject* Obj, int32 uuid, float Duration, bool bRetriggerable, void(C::* pf)(Args...), Args... args)
+	FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+
+	FObjectDelayAction<C, Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FObjectDelayAction<C, Args...>>(Obj, uuid);
+	if (ObjectDelayAction == nullptr)
+	{
+		LatentActionManager.AddNewAction(Obj, uuid, new FObjectDelayAction<C, Args...>(Duration, Cast<C>(Obj), pf, args...));
+	}
+	else
+	{
+		if (bRetriggerable)
+		{
+			ObjectDelayAction->SetDuration(Duration);
+		}
+	}
+	return uuid;
+}
+
+template<typename...Args>
+int32 UTryDelayBPLibrary::DelayMemberFunction(int32 uuid, float Duration, const FDelayDelegate& InDelegate, bool bRetriggerable /*= false*/)
+{
+	UObject* Obj = InDelegate.GetUObject();
+	checkf(Obj, TEXT("No Bound To UObject"));
+	if (Obj)
 	{
 		UWorld* World = Obj->GetWorld();
 		if (World == nullptr)
-			return;
+			return -1;
 
-		static int32 NewId = 0;
 		if (uuid == -1)
 		{
-			uuid = ++NewId;
+			uuid = UCommonUtilBPLibrary::GenerateUniqueID();
 		}
 
 		FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
 
-		FObjectDelayAction<C, Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FObjectDelayAction<C, Args...>>(Obj, uuid);
+		FObjectDelayAction<UObject, Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FObjectDelayAction<UObject, Args...>>(Obj, uuid);
 		if (ObjectDelayAction == nullptr)
 		{
-			LatentActionManager.AddNewAction(Obj, uuid, new FObjectDelayAction<C, Args...>(Duration, Cast<C>(Obj), pf, args...));
+			LatentActionManager.AddNewAction(Obj, uuid, new FObjectDelayAction<UObject, Args...>(Duration, InDelegate));
 		}
 		else
 		{
@@ -245,55 +222,97 @@ public:
 				ObjectDelayAction->SetDuration(Duration);
 			}
 		}
-		NewId = uuid;
 	}
+	return uuid;
+}
 
-	/**
-	* ÑÓ³Ùµ÷ÓÃÔ­ÉúC++ÀàµÄ³ÉÔ±º¯Êı
-	* @param Obj				ĞèÒªµ÷ÓÃµÄ³ÉÔ±º¯ÊıµÄÀà¶ÔÏó
-	* @param uuid				±êÊ¶·û,Îª-1Ê±×Ô¶¯Ôö¼Ó
-	* @param Duration			ÑÓ³Ùµ÷ÓÃµÄÊ±¼ä
-	* @param bRetriggerable		ÊÇ·ñÄÜ¹»ÖØÖÃÊ±¼ä
-	* @param pf					Àà³ÉÔ±º¯ÊıÖ¸Õë
-	* @param args				ĞèÒªµ÷ÓÃµÄº¯Êı²ÎÊı
-	*/
-	template<class C, typename... Args>
-	static void DelayRawFunction(C* Obj, int32 uuid, float Duration, bool bRetriggerable, void(C::* pf)(Args...), Args... args)
+template<typename...Args>
+void UTryDelayBPLibrary::DelayMemberFunctionForNextTick(const FDelayDelegate& InDelegate)
+{
+	UTryDelayBPLibrary::DelayMemberFunction(-1, 0.0f, InDelegate, false);
+}
+
+template<class C, typename...Args>
+int32 UTryDelayBPLibrary::DelayRawFunction(C* Obj, int32 uuid, float Duration, bool bRetriggerable, bool(C::* pf)(Args...), Args... args)
+{
+	auto FindWorld = [](UWorld* InWorld)->bool
 	{
-		auto FindWorld = [](UWorld* InWorld)->bool
-		{
-			#if WITH_EDITOR || GIsEditor
-			if (InWorld->WorldType == EWorldType::PIE)	return true;
-			#else
-			if (InWorld->WorldType == EWorldType::Game || InWorld->WorldType == EWorldType::GamePreview) return true;
-			#endif
-			return false;
-		};
+		#if WITH_EDITOR || GIsEditor
+		if (InWorld->WorldType == EWorldType::PIE)	return true;
+		#else
+		if (InWorld->WorldType == EWorldType::Game || InWorld->WorldType == EWorldType::GamePreview) return true;
+		#endif
+		return false;
+	};
 
-		UWorld* World = UCommonUtilBPLibrary::ForEachWorld(FindWorld);
-		if (World == nullptr) return;
+	UWorld* World = UCommonUtilBPLibrary::ForEachWorld(FindWorld);
+	if (World == nullptr) World = GWorld->GetWorld();
+	if (World == nullptr) return -1;
 
-		FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+	FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
 
-		static int32 NewId = 0;
-		if (uuid == -1)
-		{
-			uuid = ++NewId;
-		}
-
-		FRawDelayAction<C, Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FRawDelayAction<C, Args...>>(World, uuid);
-		if (ObjectDelayAction == nullptr)
-		{
-			LatentActionManager.AddNewAction(World, uuid, new FRawDelayAction<C, Args...>(Duration, Obj, pf, args...));
-		}
-		else
-		{
-			if (bRetriggerable)
-			{
-				ObjectDelayAction->SetDuration(Duration);
-			}
-		}
-		NewId = uuid;
+	if (uuid == -1)
+	{
+		uuid = UCommonUtilBPLibrary::GenerateUniqueID();
 	}
 
-};
+	FRawDelayAction<Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FRawDelayAction<Args...>>(World, uuid);
+	if (ObjectDelayAction == nullptr)
+	{
+		LatentActionManager.AddNewAction(World, uuid, new FRawDelayAction<Args...>(Duration, Obj, pf, args...));
+	}
+	else
+	{
+		if (bRetriggerable)
+		{
+			ObjectDelayAction->SetDuration(Duration);
+		}
+	}
+	return uuid;
+}
+
+template<typename...Args>
+int32 UTryDelayBPLibrary::DelayRawFunction(int32 uuid, float Duration, const FDelayDelegate& InDelegate, bool bRetriggerable /*= false*/)
+{
+	auto FindWorld = [](UWorld* InWorld)->bool
+	{
+		#if WITH_EDITOR || GIsEditor
+		if (InWorld->WorldType == EWorldType::PIE)	return true;
+		#else
+		if (InWorld->WorldType == EWorldType::Game || InWorld->WorldType == EWorldType::GamePreview) return true;
+		#endif
+		return false;
+	};
+
+	UWorld* World = UCommonUtilBPLibrary::ForEachWorld(FindWorld);
+	if (World == nullptr) World = GWorld->GetWorld();
+	if (World == nullptr) return -1;
+
+	FLatentActionManager& LatentActionManager = World->GetLatentActionManager();
+
+	if (uuid == -1)
+	{
+		uuid = UCommonUtilBPLibrary::GenerateUniqueID();
+	}
+
+	FRawDelayAction<Args...>* ObjectDelayAction = LatentActionManager.FindExistingAction<FRawDelayAction<Args...>>(World, uuid);
+	if (ObjectDelayAction == nullptr)
+	{
+		LatentActionManager.AddNewAction(World, uuid, new FRawDelayAction<Args...>(Duration, InDelegate));
+	}
+	else
+	{
+		if (bRetriggerable)
+		{
+			ObjectDelayAction->SetDuration(Duration);
+		}
+	}
+	return uuid;
+}
+
+template<typename...Args>
+void UTryDelayBPLibrary::DelayRawFunctionForNextTick(const FDelayDelegate& InDelegate)
+{
+	UTryDelayBPLibrary::DelayRawFunction(-1, 0.0f, InDelegate, false);
+}
+

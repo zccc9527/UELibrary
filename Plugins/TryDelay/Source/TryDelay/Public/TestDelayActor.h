@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -25,7 +25,16 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION()
-	void Print();
+	bool Print();
+
+	UFUNCTION()
+	bool PrintRet(int32 aa);
+
+	UFUNCTION()
+	bool UFunctionTest(int32& aa, int32 bb);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	int32 UFunctionTest2(int32& aa, int32 bb);
 
 	void PrintValue(int a);
 
@@ -70,7 +79,7 @@ class FRawDelayTest
 public:
 	FRawDelayTest(ATestDelayActor* InActor)
 	{
-		int* a3 = GET_PRIVATE(ATestDelayActor, InActor, a);
+		/*int* a3 = GET_PRIVATE(ATestDelayActor, InActor, a);
 		UE_LOG(LogTemp, Error, TEXT("%d"), *a3);
 		InActor->PrintA();
 		CALL_PRIVATE_FUNC(ATestDelayActor, InActor, PrintAPri);
@@ -80,16 +89,27 @@ public:
 		*a3 = 200;
 		UE_LOG(LogTemp, Error, TEXT("%d, %d"), a2, *a3);
 		InActor->PrintA();
-		CALL_PRIVATE_FUNC(ATestDelayActor, InActor, PrintAPro);
+		CALL_PRIVATE_FUNC(ATestDelayActor, InActor, PrintAPro);*/
 	}
-	void Print(UWorld* World)
+	bool Print(UWorld* World)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Black, FString::Printf(TEXT("%f"), World->GetRealTimeSeconds()));
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("%f"), World->GetRealTimeSeconds()));
+		
+		return true;
 	}
-	void PrintVlaue(UWorld* World, int32 Value)
+	bool PrintVlaue(UWorld* World, int32 Value)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Black, FString::Printf(TEXT("%f"), World->GetRealTimeSeconds()));
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("%d"), Value));
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("%f"), World->GetRealTimeSeconds()));
+		UE_LOG(LogTemp, Warning, TEXT("Delay:%f"), World->GetRealTimeSeconds())
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("%d"), Value));
+
+		return true;
+	}
+	void PrintVlaueRed(UWorld* World)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("%f"), World->GetRealTimeSeconds()));
+		UE_LOG(LogTemp, Error, TEXT("Timer:%f"), World->GetRealTimeSeconds())
+			//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("%d"), Value));
 	}
 	int a = 10;
 protected:

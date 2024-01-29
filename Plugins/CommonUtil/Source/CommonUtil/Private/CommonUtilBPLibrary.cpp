@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+Ôªø// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "CommonUtilBPLibrary.h"
 #include "CommonUtil.h"
@@ -463,7 +463,7 @@ UObject* FactoryCreateText(UClass* Class, UObject* InParent, FName Name, EObject
 		}
 	}
 
-	//µº»Î Ù–‘
+	//ÂØºÂÖ•Â±ûÊÄß
 	for (auto ActorMapElement : NewActorMap)
 	{
 		AActor* Actor = ActorMapElement.Key;
@@ -515,6 +515,19 @@ UObject* FactoryCreateText(UClass* Class, UObject* InParent, FName Name, EObject
 	return World;
 }
 
+uint32 UCommonUtilBPLibrary::GenerateUniqueID()
+{
+	FGuid Guid = FGuid::NewGuid();
+	uint32 V = GetTypeHash(Guid);
+	UE_LOG(LogTemp, Warning, TEXT("%lu"), V);
+	return V;
+}
+
+uint32 UCommonUtilBPLibrary::GenerateID()
+{
+	static uint32 uuid = 0;
+	return ++uuid;
+}
 
 
 UWorld* UCommonUtilBPLibrary::ForEachWorld(TFunction<bool(UWorld*)> InTriggerFunc)
@@ -644,7 +657,7 @@ void UCommonUtilBPLibrary::CopyActors(TArray<AActor*> Actors, FString* Destinati
 	UWorld* World = Actors[0]->GetWorld();
 	if (World)
 	{
-		// µº≥ˆActor ˝æ›
+		// ÂØºÂá∫ActorÊï∞ÊçÆ
 		FStringOutputDevice Ar;
 		const FSESelectedActorExportObjectInnerContext Context(Actors);
 		UExporter::ExportToOutputDevice(&Context, World, NULL, Ar, TEXT("copy"), 0, PPF_DeepCompareInstances | PPF_ExportsNotFullyQualified);
@@ -679,7 +692,7 @@ void UCommonUtilBPLibrary::PasteActors(TArray<AActor*>& OutPastedActors, FString
 		World = UCommonUtilBPLibrary::ForEachWorld([](UWorld* InWorld){ return InWorld->WorldType == EWorldType::Editor; });
 	}
 
-	//¥”’≥Ã˘∞Â÷–ªÒ»°Œƒ±æ?
+	//‰ªéÁ≤òË¥¥Êùø‰∏≠Ëé∑ÂèñÊñáÊú¨?
 	FString PasteString;
 	if (SourceData)
 	{
