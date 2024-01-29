@@ -5,7 +5,6 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CommonUtilBPLibrary.generated.h"
 
-
 namespace Tmp
 {
 	template <std::size_t... Index>
@@ -202,7 +201,6 @@ struct _HAVE_TYPE_MEMBER_##type<T, Tmp::void_t<typename T::type>> : Tmp::true_ty
 
 /**
 * 判断某个类中是否存在value变量
-*
 */
 #ifndef DEFINE_HAS_VALUE_MEM
 #define DEFINE_HAS_VALUE_MEM(value)	\
