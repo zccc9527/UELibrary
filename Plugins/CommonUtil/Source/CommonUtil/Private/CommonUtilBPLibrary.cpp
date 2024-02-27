@@ -519,7 +519,7 @@ uint32 UCommonUtilBPLibrary::GenerateUniqueID()
 {
 	FGuid Guid = FGuid::NewGuid();
 	uint32 V = GetTypeHash(Guid);
-	UE_LOG(LogTemp, Warning, TEXT("%lu"), V);
+	//UE_LOG(LogTemp, Warning, TEXT("%lu"), V);
 	return V;
 }
 

@@ -14,13 +14,6 @@ public:
 	* UObject物体创建时调用的函数
 	*/
 	virtual void NotifyUObjectCreated(const class UObjectBase* Object, int32 Index) = 0;
-	/*{
-		if (Object)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s, U:%d I:%d"), *Object->GetFName().ToString(), Object->GetUniqueID(), Index);
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *GUObjectArray.IndexToObject(Index)->Object->GetFName().ToString());
-		}
-	}*/
 	virtual void OnUObjectArrayShutdown() {}
 };
 

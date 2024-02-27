@@ -299,6 +299,7 @@ template struct AccessPrivate<InClass##FuncName##Accessor##ExpandName, &InClass:
 #define  CALL_PRIVATE_FUNC_OVERLOAD(InClass, InObj, FuncName, ExpandName, ...) ((InObj->*(GetPrivate(InClass##FuncName##Accessor##ExpandName())))(__VA_ARGS__))
 /**----------------------End----------------------*/
 
+
 const TCHAR* ImportObjectProperties2(
 	uint8* DestData,
 	const TCHAR* SourceText,
@@ -337,6 +338,7 @@ public:
 	static uint32 GenerateID();
 
 	/**
+	* 根据函数名调用函数
 	* ForExample:
 	* 
 	* UFUNCTION()
@@ -504,6 +506,7 @@ class COMMONUTIL_API FRootedUObject
 public:
 	FRootedUObject(T* InObj) : Obj(InObj)
 	{
+		checkf((Tmp::Is_A<UObject, T>)::value, TEXT("Not UObject Class"));
 		Obj->AddToRoot();
 	}
 	~FRootedUObject()
@@ -525,4 +528,3 @@ public:
 private:
 	T* Obj = nullptr;
 };
-

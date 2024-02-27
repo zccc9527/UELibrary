@@ -11,7 +11,6 @@ DEFINE_HAS_FUNC_MEM(func);
 DEFINE_HAS_TYPE_MEM(Type);
 DEFINE_HAS_VALUE_MEM(a);
 
-PRAGMA_DISABLE_OPTIMIZATION
 void FCommonUtilModule::StartupModule()
 {
 	TFunction<void(float)> GetWidget = [](float Value)
@@ -36,7 +35,7 @@ void FCommonUtilModule::StartupModule()
 
 	/*OnUObjectCreateListener = new FOnUObjectCreateListener();*/
 }
-PRAGMA_ENABLE_OPTIMIZATION
+
 void FCommonUtilModule::ShutdownModule()
 {
 	

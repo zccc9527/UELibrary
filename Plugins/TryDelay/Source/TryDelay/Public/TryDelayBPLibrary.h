@@ -10,7 +10,7 @@
 #include "TryDelayBPLibrary.generated.h"
 
 DECLARE_DELEGATE_RetVal(bool, FDelayDelegate);
-DECLARE_DYNAMIC_DELEGATE_RetVal(bool, FDelayDynamicDelegate);
+//DECLARE_DYNAMIC_DELEGATE_RetVal(bool, FDelayDynamicDelegate);
 
 UCLASS()
 class TRYDELAY_API UTryDelayBPLibrary : public UBlueprintFunctionLibrary
@@ -33,15 +33,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "TryDelay")
 	static void DelayFunctionNameForNextTick(UObject* CallbackTarget, FName ExecutionFunction);
 
-	template<typename TLambda, typename... Args>
-	static void ExecuteOnTick(TLambda InFunc, Args...args);
 	/**
 	* 延迟调用Lambda表达式
 	* @param uuid					标识符,为-1时自动生成唯一标识符
 	* @param Duration				延迟调用的时间
 	* @param bRetriggerable			是否能够重置时间
 	* @param InTriggerFunc			Lambda表达式
-	* @param args					重载参数
+	* @param args					重载参数,额外参数
 	* @return						返回标识符,可根据标识符在延迟时间前重置时间
 	*/
 	template<typename TLambda, typename...Args>
@@ -50,6 +48,9 @@ public:
 	template<typename TLambda, typename...Args>
 	static void DelayLambdaForNextTick(TLambda InTriggerFunc, Args...args);
 
+	template<typename TLambda, typename... Args>
+	static void ExecuteOnTick(TLambda InTriggerFunc, Args...args);
+
 	/**
 	* 延迟调用UObject的类成员函数
 	* @param Obj					需要延迟调用函数的对象
@@ -57,7 +58,7 @@ public:
 	* @param Duration				延迟调用的时间
 	* @param bRetriggerable			是否能够重置时间
 	* @param pf						延迟调用的UObject成员函数
-	* @param args					重载参数
+	* @param args					重载参数,额外参数
 	* @return						返回标识符,可根据标识符在延迟时间前重置时间
 	*/
 	template<class C, typename... Args>
@@ -90,7 +91,7 @@ public:
 };
 
 template<typename TLambda, typename...Args>
-void UTryDelayBPLibrary::ExecuteOnTick(TLambda InFunc, Args...args)
+void UTryDelayBPLibrary::ExecuteOnTick(TLambda InTriggerFunc, Args...args)
 {
 	auto FindWorld = [](UWorld* InWorld)->bool
 	{
@@ -114,7 +115,7 @@ void UTryDelayBPLibrary::ExecuteOnTick(TLambda InFunc, Args...args)
 		FTickableFunctor<TLambda, Args...>* DelayAction = LatentActionManager.FindExistingAction<FTickableFunctor<TLambda, Args...>>(World, uuid);
 		if (DelayAction == nullptr)
 		{
-			LatentActionManager.AddNewAction(World, uuid, new FTickableFunctor<TLambda, Args...>(InFunc, args...));
+			LatentActionManager.AddNewAction(World, uuid, new FTickableFunctor<TLambda, Args...>(InTriggerFunc, args...));
 		}
 	}
 }
